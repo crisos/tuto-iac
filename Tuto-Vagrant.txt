@@ -1,0 +1,142 @@
+**************************************************************************************************
+		Lab1 : Vagrant
+**************************************************************************************************
+1-Introduction
+
+HashiCorp Vagrant is another tool that implements Infrastructure as Code (IaC) approach. It’s used for creating reproducible virtual environments (like Terraform). Vagrant is often used for development and production environments.
+It leverages a declarative configuration file which describes all your software requirements, packages, operating system configuration, users, and more.
+In this lab we will set up a development environment using Vagrant features (as shown in the figure above). The creation of the new dev environment should not affect our host OS (that's exactly what we needed)
+
+2-Download Vagrant
+https://www.vagrantup.com/downloads.html
+
+3-Create VagrantFile
+
+$ mkdir vagrant-lab && cd vagrant-lab 
+$ mkdir vagrant-lab && cd vagrant-lab 
+$ cat Vagrantfile
+Vagrant.configure("2") do |config|
+  # define provider configuration
+  config.vm.provider :virtualbox do |v|
+    v.memory = 1024
+  end
+  # define the first VM configuration (Gitlab Server)
+  config.vm.define "gitlab-vm" do |vm1|
+    vm1.vm.box = "ubuntu/xenial64"
+    vm1.vm.hostname = "gitlab-vm"
+  end
+  # define the second VM configuration (Dev Server)
+  config.vm.define "dev-vm" do |vm2|
+    vm2.vm.box = "ubuntu/xenial64"
+    vm2.vm.hostname = "dev-vm"
+  end
+end
+
+4-Start VMs
+
+$ vagrant up
+Bringing machine 'gitlab-vm' up with 'virtualbox' provider...
+Bringing machine 'dev-vm' up with 'virtualbox' provider...
+==> gitlab-vm: Importing base box 'ubuntu/xenial64'...
+==> gitlab-vm: Matching MAC address for NAT networking...
+==> gitlab-vm: Checking if box 'ubuntu/xenial64' is up to date...
+==> gitlab-vm: Setting the name of the VM: vagrant-lab_gitlab-vm_1542746683085_1                                                                                        2233
+Vagrant is currently configured to create VirtualBox synced folders with
+the `SharedFoldersEnableSymlinksCreate` option enabled. If the Vagrant
+guest is not trusted, you may want to disable this option. For more
+information on this option, please refer to the VirtualBox manual:
+
+  https://www.virtualbox.org/manual/ch04.html#sharedfolders
+
+This option can be disabled globally with an environment variable:
+
+  VAGRANT_DISABLE_VBOXSYMLINKCREATE=1
+
+or on a per folder basis within the Vagrantfile:
+
+  config.vm.synced_folder '/host/path', '/guest/path', SharedFoldersEnableSymlin                                                                                        ksCreate: false
+==> gitlab-vm: Clearing any previously set network interfaces...
+==> gitlab-vm: Preparing network interfaces based on configuration...
+    gitlab-vm: Adapter 1: nat
+==> gitlab-vm: Forwarding ports...
+    gitlab-vm: 22 (guest) => 2222 (host) (adapter 1)
+==> gitlab-vm: Running 'pre-boot' VM customizations...
+==> gitlab-vm: Booting VM...
+==> gitlab-vm: Waiting for machine to boot. This may take a few minutes...
+    gitlab-vm: SSH address: 127.0.0.1:2222
+    gitlab-vm: SSH username: vagrant
+    gitlab-vm: SSH auth method: private key
+    gitlab-vm: Warning: Connection reset. Retrying...
+    gitlab-vm:
+    gitlab-vm: Vagrant insecure key detected. Vagrant will automatically replace
+    gitlab-vm: this with a newly generated keypair for better security.
+    gitlab-vm:
+    gitlab-vm: Inserting generated public key within guest...
+    gitlab-vm: Removing insecure key from the guest if it's present...
+    gitlab-vm: Key inserted! Disconnecting and reconnecting using new SSH key...
+==> gitlab-vm: Machine booted and ready!
+==> gitlab-vm: Checking for guest additions in VM...
+    gitlab-vm: The guest additions on this VM do not match the installed version                                                                                         of
+    gitlab-vm: VirtualBox! In most cases this is fine, but in rare cases it can
+    gitlab-vm: prevent things such as shared folders from working properly. If y                                                                                        ou see
+    gitlab-vm: shared folder errors, please make sure the guest additions within                                                                                         the
+    gitlab-vm: virtual machine match the version of VirtualBox you have installe                                                                                        d on
+    gitlab-vm: your host and reload your VM.
+    gitlab-vm:
+    gitlab-vm: Guest Additions Version: 5.1.38
+    gitlab-vm: VirtualBox Version: 5.2
+==> gitlab-vm: Setting hostname...
+==> gitlab-vm: Mounting shared folders...
+    gitlab-vm: /vagrant => /root/vagrant-lab
+==> dev-vm: Importing base box 'ubuntu/xenial64'...
+==> dev-vm: Matching MAC address for NAT networking...
+==> dev-vm: Checking if box 'ubuntu/xenial64' is up to date...
+==> dev-vm: Setting the name of the VM: vagrant-lab_dev-vm_1542746718492_21496
+==> dev-vm: Fixed port collision for 22 => 2222. Now on port 2200.
+==> dev-vm: Clearing any previously set network interfaces...
+==> dev-vm: Preparing network interfaces based on configuration...
+    dev-vm: Adapter 1: nat
+==> dev-vm: Forwarding ports...
+    dev-vm: 22 (guest) => 2200 (host) (adapter 1)
+==> dev-vm: Running 'pre-boot' VM customizations...
+==> dev-vm: Booting VM...
+==> dev-vm: Waiting for machine to boot. This may take a few minutes...
+    dev-vm: SSH address: 127.0.0.1:2200
+    dev-vm: SSH username: vagrant
+    dev-vm: SSH auth method: private key
+    dev-vm: Warning: Connection reset. Retrying...
+    dev-vm: Warning: Remote connection disconnect. Retrying...
+    dev-vm:
+    dev-vm: Vagrant insecure key detected. Vagrant will automatically replace
+    dev-vm: this with a newly generated keypair for better security.
+    dev-vm:
+    dev-vm: Inserting generated public key within guest...
+    dev-vm: Removing insecure key from the guest if it's present...
+    dev-vm: Key inserted! Disconnecting and reconnecting using new SSH key...
+==> dev-vm: Machine booted and ready!
+==> dev-vm: Checking for guest additions in VM...
+    dev-vm: The guest additions on this VM do not match the installed version of
+    dev-vm: VirtualBox! In most cases this is fine, but in rare cases it can
+    dev-vm: prevent things such as shared folders from working properly. If you see
+    dev-vm: shared folder errors, please make sure the guest additions within the
+    dev-vm: virtual machine match the version of VirtualBox you have installed on
+    dev-vm: your host and reload your VM.
+    dev-vm:
+    dev-vm: Guest Additions Version: 5.1.38
+    dev-vm: VirtualBox Version: 5.2
+==> dev-vm: Setting hostname...
+==> dev-vm: Mounting shared folders...
+    dev-vm: /vagrant => /root/vagrant-lab
+$ vagrant status
+Current machine states:
+
+gitlab-vm                 running (virtualbox)
+dev-vm                    running (virtualbox)
+
+This environment represents multiple VMs. The VMs are all listed
+above with their current state. For more information about a specific
+VM, run `vagrant status NAME`.
+$ vagrant ssh gitlab-vm
+Welcome to Ubuntu 16.04.5 LTS (GNU/Linux 4.4.0-139-generic x86_64)
+vagrant@gitlab-vm:~$
+
