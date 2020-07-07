@@ -140,3 +140,135 @@ $ vagrant ssh gitlab-vm
 Welcome to Ubuntu 16.04.5 LTS (GNU/Linux 4.4.0-139-generic x86_64)
 vagrant@gitlab-vm:~$
 
+
+5-Apply change to vagrantFile
+
+Modify the VagrantFile by adding the following configuration:
+-Script Shell to install Git
+-Script Shell to deploy Gitlab server
+-Synchronize the code source application folder with Gitlab VM
+-Add port forwarding
+
+$ cat Vagrantfile
+$installDocker = <<-SCRIPT
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt-get install -y docker-ce
+sudo apt-get install -y git
+sudo mv hosts /etc/hosts
+SCRIPT
+
+$installGitLab = <<-SCRIPT
+sudo docker run --detach --hostname gitlab.example.com --publish 443:443 --publish 80:80 --publish 2228:22 --name gitlab --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab gitlab/gitlab-ce:latest
+SCRIPT
+
+
+
+memory = 2048
+domain = 'local'
+Vagrant.configure("2") do |config|
+  # define provider configuration
+  #config.vm.provider :virtualbox do |v|
+   # v.memory = 4024
+  #end
+  # define the first VM configuration (Gitlab Server)
+  config.vm.define "gitlab-vm" do |vm1|
+    vm1.vm.box = "ubuntu/xenial64"
+    vm1.vm.hostname = "gitlab-vm"
+    vm1.vm.network :private_network, ip: "10.0.0.10", virtualbox__intnet: domain
+    vm1.vm.provider :virtualbox do |vb|
+        vb.memory = memory
+        vb.cpus = 1
+        vb.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
+        vb.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
+        #vb.customize ['modifyvm', :id, '--macaddress1', "5CA1AB1E00"+node[:id]]
+    end
+  # sync a local folder with application code to the VM folder
+    vm1.vm.synced_folder "training-app-backend/", "/srv/app"
+  # use port forwarding make application accessible on localhost
+    vm1.vm.network "forwarded_port", guest: 80, host: 8000
+  # system configuration is done by shell
+    vm1.vm.provision "file", source: "hosts", destination: "hosts"
+    vm1.vm.provision "shell", inline: $installDocker
+    vm1.vm.provision "shell", inline: $installGitLab
+    end
+
+  # define the second VM configuration (Dev Server)
+  config.vm.define "dev-vm" do |vm2|
+    vm2.vm.box = "ubuntu/xenial64"
+    vm2.vm.hostname = "dev-vm"
+    vm2.vm.network :private_network, ip: "10.0.0.11", virtualbox__intnet: domain
+    vm2.vm.provider :virtualbox do |vb|
+        vb.memory = memory
+        vb.cpus = 1
+        vb.customize ['modifyvm', :id, '--natdnshostresolver1', 'on']
+        vb.customize ['modifyvm', :id, '--natdnsproxy1', 'on']
+        #vb.customize ['modifyvm', :id, '--macaddress1', "5CA1AB1E00"+node[:id]]
+    end
+  # use port forwarding make application accessible on localhost
+    vm2.vm.network "forwarded_port", guest: 3000, host: 4000
+   # system configuration is done by shell
+    vm2.vm.provision "file", source: "hosts", destination: "hosts"
+    vm2.vm.provision "shell", inline: $installDocker
+
+    end
+
+
+end
+
+6-Provision VMS
+$ vagrant provision
+$ vagrant ssh  gitlab-vm                                                                                    :2228->22/tcp   gitlab
+vagrant@gitlab-vm:~$ ls /srv/app/
+app.js  docker-compose.yaml  Dockerfile  package.json  README.md
+
+-Try to access to your Gitlab server
+-Create a new account
+-Create a new repository (infra-as-code-lab)
+
+On the dev-vm configure the git client
+
+vagrant@dev-vm:~$ git config --global user.name "walidsaad"
+
+vagrant@dev-vm:~$ git config --global user.email walid.saadd@gmail.com
+
+vagrant@dev-vm:~$ git clone http://10.0.0.10:8000/walidsaad/training-app.git
+Cloning into 'training-app'...
+warning: You appear to have cloned an empty repository.
+Checking connectivity... done.
+vagrant@dev-vm:~$ ls training-app
+vagrant@dev-vm:~$ cd training-app
+vagrant@dev-vm:~/training-app$ git status
+On branch master
+Initial commit
+nothing to commit (create/copy files and use "git add" to track)
+vagrant@dev-vm:~/training-app$ git branch
+vagrant@dev-vm:~/training-app$ git remote -v
+origin  http://10.0.0.10:8000/walidsaad/training-app.git (fetch)
+origin  http://10.0.0.10:8000/walidsaad/training-app.git (push)
+vagrant@dev-vm:~/training-app$ git remote show origin
+* remote origin
+  Fetch URL: http://10.0.0.10:8000/walidsaad/training-app-backend.git
+  Push  URL: http://10.0.0.10:8000/walidsaad/training-app-backend.git
+  HEAD branch: (unknown)
+  Local branch configured for 'git pull':
+    master merges with remote master
+vagrant@dev-vm:~/training-app-backend$ cp /srv/app/* .
+vagrant@dev-vm:~/training-app-backend$ ls
+vagrant@dev-vm:~/training-app-backend$ git add .
+vagrant@dev-vm:~/training-app-backend$ git commit -m "Add App files"
+vagrant@dev-vm:~/training-app-backend$ git push -u origin master
+
+
+
+2.5.4. Destroy and recreate the Dev Environment
+$ vagrant destroy -f
+$ vagrant up
+
+Once a new VM is up and running, try to provision it:
+$ vagrant provision
+
+Try to access to your Gitlab server and run your application.
