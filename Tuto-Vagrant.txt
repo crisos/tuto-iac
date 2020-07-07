@@ -187,11 +187,9 @@ Vagrant.configure("2") do |config|
         #vb.customize ['modifyvm', :id, '--macaddress1', "5CA1AB1E00"+node[:id]]
     end
   # sync a local folder with application code to the VM folder
-    vm1.vm.synced_folder "training-app-backend/", "/srv/app"
   # use port forwarding make application accessible on localhost
     vm1.vm.network "forwarded_port", guest: 80, host: 8000
   # system configuration is done by shell
-    vm1.vm.provision "file", source: "hosts", destination: "hosts"
     vm1.vm.provision "shell", inline: $installDocker
     vm1.vm.provision "shell", inline: $installGitLab
     end
@@ -211,7 +209,6 @@ Vagrant.configure("2") do |config|
   # use port forwarding make application accessible on localhost
     vm2.vm.network "forwarded_port", guest: 3000, host: 4000
    # system configuration is done by shell
-    vm2.vm.provision "file", source: "hosts", destination: "hosts"
     vm2.vm.provision "shell", inline: $installDocker
 
     end
@@ -220,53 +217,10 @@ Vagrant.configure("2") do |config|
 end
 
 6-Provision VMS
-$ vagrant provision
-$ vagrant ssh  gitlab-vm                                                                                    :2228->22/tcp   gitlab
-vagrant@gitlab-vm:~$ ls /srv/app/
-app.js  docker-compose.yaml  Dockerfile  package.json  README.md
-
--Try to access to your Gitlab server
--Create a new account
--Create a new repository (infra-as-code-lab)
-
-On the dev-vm configure the git client
-
-vagrant@dev-vm:~$ git config --global user.name "walidsaad"
-
-vagrant@dev-vm:~$ git config --global user.email walid.saadd@gmail.com
-
-vagrant@dev-vm:~$ git clone http://10.0.0.10:8000/walidsaad/training-app.git
-Cloning into 'training-app'...
-warning: You appear to have cloned an empty repository.
-Checking connectivity... done.
-vagrant@dev-vm:~$ ls training-app
-vagrant@dev-vm:~$ cd training-app
-vagrant@dev-vm:~/training-app$ git status
-On branch master
-Initial commit
-nothing to commit (create/copy files and use "git add" to track)
-vagrant@dev-vm:~/training-app$ git branch
-vagrant@dev-vm:~/training-app$ git remote -v
-origin  http://10.0.0.10:8000/walidsaad/training-app.git (fetch)
-origin  http://10.0.0.10:8000/walidsaad/training-app.git (push)
-vagrant@dev-vm:~/training-app$ git remote show origin
-* remote origin
-  Fetch URL: http://10.0.0.10:8000/walidsaad/training-app-backend.git
-  Push  URL: http://10.0.0.10:8000/walidsaad/training-app-backend.git
-  HEAD branch: (unknown)
-  Local branch configured for 'git pull':
-    master merges with remote master
-vagrant@dev-vm:~/training-app-backend$ cp /srv/app/* .
-vagrant@dev-vm:~/training-app-backend$ ls
-vagrant@dev-vm:~/training-app-backend$ git add .
-vagrant@dev-vm:~/training-app-backend$ git commit -m "Add App files"
-vagrant@dev-vm:~/training-app-backend$ git push -u origin master
-
-
-
-2.5.4. Destroy and recreate the Dev Environment
-$ vagrant destroy -f
 $ vagrant up
+
+7. Destroy and recreate the Dev Environment
+$ vagrant destroy -f
 
 Once a new VM is up and running, try to provision it:
 $ vagrant provision
