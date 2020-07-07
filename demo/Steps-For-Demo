@@ -1,0 +1,73 @@
+1-Create AWS Profile
+https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
+2-Create demo directory
+$ mkdir demo
+3-Create TF template for AWS Provider
+$ cd demo
+$ cat provider.tf
+provider "aws" {
+  profile = "walidsaad"
+  region  = "eu-west-1"
+}
+
+4-Download AWS Plugin
+
+$ terraform init
+
+5-Create EC2 Instance
+$ cat ec2-instance.tf
+resource "aws_instance" "example" {
+  ami           = "ami-08f4717d06813bf00"
+  instance_type = "t2.micro"
+
+  provisioner "local-exec" {
+    command = "echo ${aws_instance.example.public_ip} > ip_address.txt"
+  }
+}
+
+6-Execution plan
+
+$terraform plan
+
+7-Deploy Infrastructure
+
+$ terraform apply
+$ cat ip_address.txt
+
+8-Destroy Infrastructure
+
+$ terraform destroy
+
+9-Update TF template (Create Key Pair, EC2 Instance and Remote Exec)
+
+$ cat ec2-instance.tf
+
+resource "aws_key_pair" "example" {
+  key_name   = "examplekey"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+resource "aws_instance" "example" {
+  key_name      = aws_key_pair.example.key_name
+  ami           = "ami-08f4717d06813bf00"
+  instance_type = "t2.micro"
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("~/.ssh/id_rsa")
+    host        = self.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo amazon-linux-extras enable nginx1.12",
+      "sudo yum -y install nginx",
+      "sudo systemctl start nginx"
+    ]
+  }
+}
+$ ssh-keygen -t rsa
+$ chmod 400 ~/.ssh/
+$ terraform plan
+$ terraform apply
